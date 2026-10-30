@@ -1,0 +1,44 @@
+{
+  "properties": [
+    {
+      "name": "spring.h2.console.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable the H2 web console."
+    },
+    {
+      "name": "spring.h2.console.path",
+      "type": "java.lang.String",
+      "description": "Path at which the H2 web console is available."
+    },
+    {
+      "name": "app.admin.username",
+      "type": "java.lang.String",
+      "description": "Username for the bootstrapped administrator account."
+    },
+    {
+      "name": "app.admin.password",
+      "type": "java.lang.String",
+      "description": "Password used to bootstrap the administrator account."
+    },
+    {
+      "name": "app.cors.allowed-origin",
+      "type": "java.lang.String",
+      "description": "Allowed frontend origin for credentialed API requests."
+    },
+    {
+      "name": "app.payment.upi-receiver-phone",
+      "type": "java.lang.String",
+      "description": "UPI receiver phone number shown during checkout."
+    },
+    {
+      "name": "app.checkout.tax-rate",
+      "type": "java.math.BigDecimal",
+      "description": "Tax rate applied to checkout subtotal."
+    },
+    {
+      "name": "app.upload.directory",
+      "type": "java.lang.String",
+      "description": "Directory used to persist uploaded book cover images."
+    }
+  ]
+}

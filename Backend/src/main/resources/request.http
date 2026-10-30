@@ -1,0 +1,10 @@
+### Upload Book API Test
+POST http://localhost:8080/api/books/upload
+Content-Type: application/json
+
+{
+  "title": "Spring Boot Guide",
+  "author": "Rishi",
+  "description": "Learning backend development",
+  "fileUrl": "sample-pdf-link"
+}
