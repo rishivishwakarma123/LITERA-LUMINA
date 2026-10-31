@@ -1,5 +1,5 @@
 # Stage 1: Build the application using Maven
-FROM eclipse-temurin:17-jdk-alpine AS build
+FROM eclipse-temurin:25-jdk-alpine AS build
 WORKDIR /app
 
 # Copy Maven wrapper and pom.xml first to cache dependencies
@@ -17,7 +17,7 @@ COPY src/ ./src
 RUN ./mvnw clean package -DskipTests
 
 # Stage 2: Run the application
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
