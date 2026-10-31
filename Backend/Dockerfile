@@ -5,6 +5,7 @@ WORKDIR /app
 # Copy Maven wrapper and pom.xml first to cache dependencies
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
+RUN chmod +x mvnw
 RUN ./mvnw dependency:go-offline
 
 # Copy source code and build the jar
