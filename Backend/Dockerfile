@@ -5,7 +5,11 @@ WORKDIR /app
 # Copy Maven wrapper and pom.xml first to cache dependencies
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
+
+# Yeh do lines add kar do (Windows line endings fix karne ke liye)
+RUN sed -i 's/\r$//' mvnw
 RUN chmod +x mvnw
+
 RUN ./mvnw dependency:go-offline
 
 # Copy source code and build the jar
