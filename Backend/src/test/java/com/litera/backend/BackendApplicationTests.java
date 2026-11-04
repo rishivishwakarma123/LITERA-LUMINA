@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.security.core.context.SecurityContext;
@@ -27,14 +28,20 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.admin.initial-setup-key=test-admin-setup-key")
 class BackendApplicationTests {
 	private MockMvc mockMvc;
 
@@ -77,6 +84,27 @@ class BackendApplicationTests {
 	}
 
 	@Test
+	void rootRouteReturnsBackendStatusInsteadOfNotFound() throws Exception {
+		mockMvc.perform(get("/"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.application").value("Litera Lumina"))
+				.andExpect(jsonPath("$.status").value("running"))
+				.andExpect(jsonPath("$.frontend").value("http://localhost:5173"));
+	}
+
+	@Test
+	void corsAllowsBothLocalhostAliasesForFrontendRequests() throws Exception {
+		for (String origin : List.of("http://localhost:5173", "http://127.0.0.1:5173")) {
+			mockMvc.perform(options("/api/auth/register-admin")
+							.header("Origin", origin)
+							.header("Access-Control-Request-Method", "POST")
+							.header("Access-Control-Request-Headers", "content-type,x-xsrf-token"))
+					.andExpect(status().isOk())
+					.andExpect(header().string("Access-Control-Allow-Origin", origin));
+		}
+	}
+
+	@Test
 	void registrationRejectsShortPasswordsAndInvalidEmails() {
 		AuthController.RegisterRequest request = new AuthController.RegisterRequest(
 				"New User", "not-an-email", null, "short");
@@ -87,6 +115,43 @@ class BackendApplicationTests {
 				violation.getPropertyPath().toString().equals("password")));
 		Assertions.assertTrue(violations.stream().anyMatch(violation ->
 				violation.getPropertyPath().toString().equals("email")));
+	}
+
+	@Test
+	@Transactional
+	void firstAdminCanBeCreatedWithSetupKeyAndThenLogIn() throws Exception {
+		String adminRequest = """
+				{"name":"First Admin","email":"first-admin@example.test","setupKey":"test-admin-setup-key","password":"secure-admin-password"}
+				""";
+
+		mockMvc.perform(post("/api/auth/register-admin")
+						.with(csrf())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(adminRequest.replace("test-admin-setup-key", "incorrect-key")))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.detail").value("Invalid admin setup key"));
+
+		mockMvc.perform(post("/api/auth/register-admin")
+						.with(csrf())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(adminRequest))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.role").value("ADMIN"));
+
+		mockMvc.perform(post("/api/auth/login")
+						.with(csrf())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"identifier":"First Admin","password":"secure-admin-password"}
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.role").value("ADMIN"));
+
+		mockMvc.perform(post("/api/auth/register-admin")
+						.with(csrf())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(adminRequest.replace("first-admin@example.test", "second-admin@example.test")))
+				.andExpect(status().isConflict());
 	}
 
 	@Test

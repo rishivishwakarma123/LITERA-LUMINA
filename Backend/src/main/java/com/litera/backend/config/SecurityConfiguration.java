@@ -18,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
@@ -67,7 +68,13 @@ public class SecurityConfiguration {
     public CorsConfigurationSource corsConfigurationSource(
             @Value("${app.cors.allowed-origin:http://localhost:5173}") String allowedOrigin) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(allowedOrigin));
+        List<String> allowedOrigins = new ArrayList<>(List.of(allowedOrigin));
+        if (allowedOrigin.startsWith("http://localhost:")) {
+            allowedOrigins.add(allowedOrigin.replaceFirst("^http://localhost:", "http://127.0.0.1:"));
+        } else if (allowedOrigin.startsWith("http://127.0.0.1:")) {
+            allowedOrigins.add(allowedOrigin.replaceFirst("^http://127\\.0\\.0\\.1:", "http://localhost:"));
+        }
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
         configuration.setAllowCredentials(true);

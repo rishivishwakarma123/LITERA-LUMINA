@@ -15,10 +15,24 @@ $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
 
 The default development profile uses an in-memory H2 database and recreates its
 schema at startup, so it starts with no sample users, books, or orders.
+With the backend running, open `http://localhost:8081/h2-console` to inspect
+the local database. Connect using JDBC URL `jdbc:h2:mem:testdb`, username `sa`,
+and a blank password. This in-memory database is reset whenever the backend
+restarts.
 
-Set `LITERA_ADMIN_PASSWORD` before starting the backend to create the `rishi`
-admin account. The password is only read from the environment and is stored in
-the database as a BCrypt hash. `LITERA_ADMIN_USERNAME` can change the username;
+The default `dev` profile binds the backend to loopback and uses
+`litera-local-admin-setup` as its local-only first-admin setup key. On the admin
+login screen, choose **Create Admin Account**, enter that setup key, then choose
+your own account name, email, and password. The setup key is not the account
+password, and admin creation is disabled after the first administrator exists.
+Account passwords are stored as BCrypt hashes.
+
+To use a different local setup key, set `LITERA_ADMIN_SETUP_KEY` before starting
+the backend. The MySQL profile does not load the local development profile; set
+a strong, private `LITERA_ADMIN_SETUP_KEY` there to enable initial admin setup.
+Never use the local development key in a deployed environment, and do not put
+production keys in source control.
+
 `LITERA_FRONTEND_ORIGIN` can change the allowed frontend origin.
 
 Admin UI/API endpoints require an authenticated `ADMIN` session. Requests made
@@ -34,10 +48,12 @@ and `DATABASE_PASSWORD`. That profile uses schema updates and does not drop
 existing records.
 Start with `.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=mysql"`.
 
-Set `LITERA_ADMIN_PASSWORD` in the backend process environment to bootstrap the
-administrator; the password is stored as a BCrypt hash. The default username is
-`rishi` and can be changed with `LITERA_ADMIN_USERNAME`. Do not put credentials
-in source control.
+When using the MySQL profile, set `LITERA_ADMIN_SETUP_KEY` in the backend
+environment before first startup, then use **Create Admin Account** on the admin
+login screen. The one-time setup key is not the admin's password and is no
+longer accepted after the first admin account has been created. Existing admin
+accounts in a persistent database are retained. Do not put the setup key in
+source control.
 
 Book uploads start in `PENDING` and require administrator approval. Checkout
 uses the persisted cart, server-side prices, a configurable `LITERA_TAX_RATE`
