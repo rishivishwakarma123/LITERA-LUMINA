@@ -1,0 +1,33 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Frontend",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev",
+				"--prefix",
+				"frontend",
+				"--",
+				"--host",
+				"127.0.0.1"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run Backend",
+			"type": "shell",
+			"command": ".\\Backend\\mvnw.cmd",
+			"args": [
+				"spring-boot:run",
+				"-f",
+				"Backend\\pom.xml"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

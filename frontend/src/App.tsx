@@ -10,7 +10,7 @@ import { SellerDashboard } from './components/seller-dashboard'
 import { AdminDashboard } from './components/admin-dashboard'
 import { PaymentHistory } from './components/payment-history'
 import type { CheckoutCartItem, CheckoutOrder } from './components/checkout-modal'
-import { apiRequest, uploadBookCover, type ApiUser } from './lib/api'
+import { ApiRequestError, apiRequest, uploadBookCover, type ApiUser } from './lib/api'
 
 type BookRecord = {
   id: number | string
@@ -163,11 +163,11 @@ export default function App() {
         })
       })
       .catch((error: unknown) => {
-        if (adminRouteRequested && error instanceof Error && error.message.includes('(401)')) {
+        if (adminRouteRequested && error instanceof ApiRequestError && error.status === 401) {
           setPostLoginRedirect('admin-portal')
           setAdminLogin(true)
           setShowAuthModal(true)
-        } else if (!(error instanceof Error) || !error.message.includes('(401)')) {
+        } else if (!(error instanceof ApiRequestError) || error.status !== 401) {
           setUiError(error instanceof Error ? error.message : 'Unable to restore your session')
         }
       })

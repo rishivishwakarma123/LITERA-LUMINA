@@ -7,6 +7,16 @@ type ApiErrorPayload = {
   error?: string
 }
 
+export class ApiRequestError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiRequestError'
+    this.status = status
+  }
+}
+
 async function getCsrfToken(): Promise<{ headerName: string; token: string }> {
   const response = await fetch(`${API_BASE_URL}/api/auth/csrf`, {
     credentials: 'include',
@@ -42,7 +52,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     } catch {
       // Keep the HTTP status message when the server does not return JSON.
     }
-    throw new Error(message)
+    throw new ApiRequestError(message, response.status)
   }
   if (response.status === 204) {
     return undefined as T

@@ -18,6 +18,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess, isAdminLogin = fals
   const [phone, setPhone] = useState('')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
+  const [setupKey, setSetupKey] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -29,9 +30,11 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess, isAdminLogin = fals
     setIsSubmitting(true)
     try {
       if (isSignUp) {
-        await apiRequest('/api/auth/register', {
+        await apiRequest(isAdminLogin ? '/api/auth/register-admin' : '/api/auth/register', {
           method: 'POST',
-          body: JSON.stringify({ name: name.trim(), email: identifier.trim(), phone: phone.trim(), password }),
+          body: JSON.stringify(isAdminLogin
+            ? { name: name.trim(), email: identifier.trim(), setupKey, password }
+            : { name: name.trim(), email: identifier.trim(), phone: phone.trim(), password }),
         })
       }
       const user = await apiRequest<ApiUser>('/api/auth/login', {
@@ -47,6 +50,8 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess, isAdminLogin = fals
       setPhone('')
       setIdentifier('')
       setPassword('')
+      setSetupKey('')
+      setIsSignUp(false)
       onClose()
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Sign in failed')
@@ -72,10 +77,12 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess, isAdminLogin = fals
           </div>
           <div>
             <h2 className="text-xl font-bold tracking-tight text-foreground">
-              {isSignUp ? 'Create an Account' : 'Welcome Back'}
+              {isSignUp ? (isAdminLogin ? 'Create Admin Account' : 'Create an Account') : 'Welcome Back'}
             </h2>
             <p className="text-xs text-muted-foreground">
-              {isSignUp ? 'Join Litera Lumina student network' : 'Login to your account'}
+              {isSignUp
+                ? (isAdminLogin ? 'Set up the first administrator account' : 'Join Litera Lumina student network')
+                : 'Login to your account'}
             </p>
           </div>
         </div>
@@ -99,7 +106,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess, isAdminLogin = fals
             </div>
           )}
 
-          {isSignUp && (
+          {isSignUp && !isAdminLogin && (
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-foreground">Phone (optional)</label>
               <input
@@ -115,20 +122,43 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess, isAdminLogin = fals
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-foreground">
-              {isAdminLogin ? 'Admin username' : 'Email Address'}
+              {isAdminLogin && !isSignUp ? 'Admin username or email' : 'Email Address'}
             </label>
             <div className="flex items-center rounded-xl border border-border bg-background px-3 py-2.5 focus-within:border-primary transition-all">
               <Mail className="mr-2.5 size-4 text-muted-foreground shrink-0" />
               <input
-                type={isAdminLogin ? 'text' : 'email'}
+                type={isAdminLogin && !isSignUp ? 'text' : 'email'}
                 required
-                placeholder={isAdminLogin ? 'rishi' : 'student@college.edu'}
+                placeholder={isAdminLogin && !isSignUp ? 'Admin username or email' : 'student@college.edu'}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
           </div>
+
+          {isAdminLogin && isSignUp && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-foreground">One-time admin setup key</label>
+              <div className="flex items-center rounded-xl border border-border bg-background px-3 py-2.5 focus-within:border-primary transition-all">
+                <Lock className="mr-2.5 size-4 text-muted-foreground shrink-0" />
+                <input
+                  type="password"
+                  required
+                  maxLength={256}
+                  autoComplete="off"
+                  placeholder="litera-local-admin-setup"
+                  value={setupKey}
+                  onChange={(event) => setSetupKey(event.target.value)}
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                For local development, use <span className="font-mono">litera-local-admin-setup</span>.
+                Setup is available only until the first admin account is created.
+              </p>
+            </div>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-foreground">Password</label>
@@ -157,21 +187,22 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess, isAdminLogin = fals
           {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
         </form>
 
-        {!isAdminLogin && (
-          <div className="mt-6 text-center text-xs text-muted-foreground">
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+        <div className="mt-6 text-center text-xs text-muted-foreground">
+            {isSignUp
+              ? 'Already have an account?'
+              : isAdminLogin ? 'Need to set up the first admin account?' : "Don't have an account?"}{' '}
             <button
               type="button"
               onClick={() => {
                 setError('')
+                setSetupKey('')
                 setIsSignUp(!isSignUp)
               }}
               className="font-semibold text-primary hover:underline underline-offset-2"
             >
-              {isSignUp ? 'Log In' : 'Sign Up'}
+              {isSignUp ? 'Log In' : isAdminLogin ? 'Create Admin Account' : 'Sign Up'}
             </button>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )
